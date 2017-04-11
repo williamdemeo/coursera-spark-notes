@@ -455,8 +455,8 @@ The "Hello, World!" of programming with large-scale data.
 val rdd = spark.textFile("hdfs://...")
 
 val count = rdd.flatMap(line => line.split(" ") // separate lines into words
-               .map(word => (word, 1))          // include something to count
-			   .reduceByKey(_ + _)              // sum up the 1s in the pairs
+        .map(word => (word, 1))          // include something to count
+        .reduceByKey(_ + _)              // sum up the 1s in the pairs
 ```
 
 That's it!
@@ -650,6 +650,9 @@ RDDs also contain other important actions unrelated to regular Scala collections
 
 ---
 
+## 1.6 Evaluation in Spark: Unlike Scala Collections!
+
+### Why is Spark Good for Data Science?
 
 
 
@@ -662,3 +665,7 @@ RDDs also contain other important actions unrelated to regular Scala collections
 
 
 
+
+1pHmiBQM BM aT`F, lMHBF2 a+H
+*QHH2+iBQMb5
+"B; .i MHvbBb rBi? a+H M/ aT`F
