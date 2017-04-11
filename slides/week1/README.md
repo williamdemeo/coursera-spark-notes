@@ -1,9 +1,7 @@
  
 [Big data analysis with Scala and Spark](https://www.coursera.org/learn/scala-spark-big-data)
 
-Original slides by **Heather Miller**
-
-Transcribed in Markdown by **William DeMeo**
+This is an abridged markdown version of the slides from the course by **Heather Miller**.
 
 ---
 
