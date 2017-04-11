@@ -649,17 +649,4 @@ RDDs also contain other important actions unrelated to regular Scala collections
 ### Why is Spark Good for Data Science?
 
 
-
-
-
-
-
-
-
-
-
-
-
-1pHmiBQM BM aT`F, lMHBF2 a+H
-*QHH2+iBQMb5
-"B; .i MHvbBb rBi? a+H M/ aT`F
+---
