@@ -554,14 +554,9 @@ These are **LAZY!**
 
 | Name | signature | description |
 | --- | --- | --- |
-| `map` | `map[B](f: A => B): RDD[B]` | apply function to each element in 
-                                        RDD and return the result in an RDD |
-| `flatMap` | `flatMap[B](f: A => TraversableOnce[B]): RDD[B]` | apply function to each
-                                                                 element in RDD and return 
-															     the result in an RDD |
-| `filter` | `filter(pred: A => Boolean): RDD[A]` | apply predicate to each element in RDD
-	                                                and return an RDD of elements that 
-													have passed the predicate condition |
+| `map` | `map[B](f: A => B): RDD[B]` | apply function to each element in RDD and return the result in an RDD |
+| `flatMap` | `flatMap[B](f: A => TraversableOnce[B]): RDD[B]` | apply function to each element in RDD and return the result in an RDD |
+| `filter` | `filter(pred: A => Boolean): RDD[A]` | apply predicate to each element in RDD and return an RDD of elements that have passed the predicate condition |
 | `distinct` | `distinct(): RDD[B]` | return RDD with duplicates removed |
 
 ---
