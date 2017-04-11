@@ -1,12 +1,17 @@
-# 
-These are Heather Miller's slides from the course:  
+ 
 [Big data analysis with Scala and Spark](https://www.coursera.org/learn/scala-spark-big-data)
+
+Original slides by **Heather Miller**
+
+Transcribed in Markdown by **William DeMeo**
 
 ---
 
-# 1.1 Introduction, Logistics, What You'll Learn
+# Week 1
 
-## So far in the Scala courses...
+## 1.1 Introduction, Logistics, What You'll Learn
+
+### So far in the Scala courses...
 
 **Focused on:**
 
@@ -16,7 +21,7 @@ These are Heather Miller's slides from the course:
 
 ---
 
-## So far in the Scala courses...
+### So far in the Scala courses...
 
 **Focused on:**
 
@@ -31,7 +36,7 @@ Not a machine learning or data science course!
 
 ---
 
-## Why Scala? Why Spark?
+### Why Scala? Why Spark?
 
 **Normally:**  
 Data science and analytics is done "in the small," in R/Python/MATLAB, etc
@@ -46,7 +51,7 @@ making too!**
 
 ---
 
-## Why Scala? Why Spark?
+### Why Scala? Why Spark?
 
 **By using a language like Scala, it's easier to scale your small problem to
 the large with Spark, whose API is almost 1-to-1 with Scala's collections.**
@@ -58,7 +63,7 @@ looks a and feels a lot like Scala Collections!
 
 ---
 
-## Why Spark?
+### Why Spark?
 
 **Spark is...**
 
@@ -76,7 +81,7 @@ looks a and feels a lot like Scala Collections!
 
 ---
 
-## In this course you'll learn...
+### In this course you'll learn...
 
 + Extending data parallel paradigm to the distributed case, using Spark.
 
@@ -90,7 +95,7 @@ looks a and feels a lot like Scala Collections!
 
 ---
 
-## Prerequisites
+### Prerequisites
 
 **Builds on the material taught in the previous Scala courses.**
 
@@ -102,7 +107,7 @@ Or at minimum, some familiarity with Scala.
 
 ---
 
-## Books, Resources
+### Books, Resources
 
 Many excellent books released in the past year or two!
 
@@ -119,7 +124,7 @@ Many excellent books released in the past year or two!
 
 ---
 
-## Tools
+### Tools
 
 As in all other Scala courses...
 
@@ -132,7 +137,7 @@ As in all other Scala courses...
   
 ---
 
-## Assignments
+### Assignments
 
 **Like all other Scala courses, this course comes with autograders!**
 
@@ -141,9 +146,9 @@ you to do analyses on real-life datasets.**
 
 --
 
-# 1.2 Data-Parallel to Distributed Data-Parallel
+## 1.2 Data-Parallel to Distributed Data-Parallel
 
-## Visualizing **Shared Memory** Data-Parallelism
+### Visualizing **Shared Memory** Data-Parallelism
 
 What does data-parallel look like?
 
@@ -161,7 +166,7 @@ val res =
 
 ---
 
-## Visualizing **Distributed** Data-Parallelism
+### Visualizing **Distributed** Data-Parallelism
 
 What does **distributed** data-parallel look like?
 
@@ -181,7 +186,7 @@ val res =
 
 ---
 
-## Data-parallel to **Distributed** Data-Parallel
+### Data-parallel to **Distributed** Data-Parallel
 
 **Shared memory case:** Data-parallel programming model.  Data is partitioned in (shared) memory and operated upon in parallel.
 
@@ -197,7 +202,7 @@ previously can also be applied to their distributed counterparts.
 
 ---
 
-## Apache Spark
+### Apache Spark
 
 Throughout this part of the course we will use the Apache Spark framework for distributed data-parallel programming.
 
@@ -207,7 +212,7 @@ Resilient Distributed Datasets (RDDs)
 
 ---
 
-## Distributed Data-Parallel: High Level Illustration
+### Distributed Data-Parallel: High Level Illustration
 
 Given some large dataset that can't fit into memory on a single node...
 
@@ -228,9 +233,9 @@ wiki.map {
 
 ---
 
-# 1.3 Latency
+## 1.3 Latency
 
-## Data-Parallel Programming
+### Data-Parallel Programming
 
 In the Parallel Programming course, we learned:
 
@@ -244,7 +249,7 @@ Today:
 
 ---
 
-## Distribution
+### Distribution
 
 Distribution introduces important concerns beyond what we had to worry about when dealing with paralleism in the shared-memory case:
 
@@ -256,7 +261,7 @@ Distribution introduces important concerns beyond what we had to worry about whe
 
 ---
 
-## Important Latency Numbers
+### Important Latency Numbers
 
 **Main memory reference**: 100ns
 
@@ -272,13 +277,13 @@ NB sending packets between continents is *1 million times* slower than main memo
 
 ---
 
-## Latency Number Intuitively
+### Latency Number Intuitively
 
 (omitting slides about "humanized" latency numbers)
 
 ---
 
-## Big Data Processing and Latency?
+### Big Data Processing and Latency?
 
 With some intuition now about how expensive network communication and 
 disk ops can be, one may ask:
@@ -289,7 +294,7 @@ To answer this question, let's first start with Spark's prececessor, Hadoop.
 
 ---
 
-## Hadoop/MapReduce
+### Hadoop/MapReduce
 
 Hadoop is a widely-used large-scale batch data processing framework.
 It's an open source implementation of Google's MapReduce.
@@ -304,7 +309,7 @@ scale to 100s or 1000s of nodes at all.
 
 ---
 
-## Hadoop/MapReduce + Fault Tolerance
+### Hadoop/MapReduce + Fault Tolerance
 
 **Why is this important?**
 
@@ -319,7 +324,7 @@ engineer to craft a complex pipeline of map/reduce stages on extremely large dat
 
 ---
 
-## Why Spark?
+### Why Spark?
 
 **Fault tolerance in Hadoop/MapReduce comes at a cost**
 
@@ -331,7 +336,7 @@ Between each map and reduce step, in order to recover from potential failures, H
 
 ---
 
-## Why Spark?
+### Why Spark?
 
 **Spark...**
 
@@ -349,13 +354,136 @@ adding even more expressive APIs.
 
 ---
 
-## Spark versus Hadoop
+### Spark versus Hadoop
 
 (omitting slides with graphs comparing Spark and Hadoop)
 
 ---
 
+## 1.4 Resilient Distributed Datasets (RDDs), Spark's Distributed Collections
+
+### Resilient Distributed Datasets (RDDs)
+
+RDDs seem a lot like **immutable** sequential or parallel Scala collections.
+
+```scala
+abstract class RDD[T] {
+  def map[U](f: T => U): RDD[U] = ...
+  def flatMap[U](f: T => TraversableOnce[U]): RDD[U] = ...
+  def filter(f: T => Boolean): RDD[T] = ...
+  def reduce(f: (T,T) => T): T = ...
+}
+```
+
+Most operations on RDDs, like Scala's immutable `List` and parallel collections, 
+are higher-order functions.
+
+*That is, they are methods that work on RDDs and take a function as an argument 
+and typically return RDDs*
+
+---
+### Resilient Distributed Datasets (RDDs)
+
+RDDs seem a lot like **immutable** sequential or parallel Scala collections.
 
 
+|**Combinators on Scala parallel/sequential collections:** | **Combinators on RDDs:** |
+| --- | --- |
+|`map` | `map`|
+|`flatMap` | `flatMap`|
+|`reduce` | `reduce` |
+|`fold` | `fold` |
+|`aggregate` | `aggregate` |
 
+---
+### Resilient Distributed Datasets (RDDs)
 
+While their signatures differ a bit, their semantics (macroscopicaly) are the same:
+
+```scala
+map[B](f: A => B): List[B] // Scala List
+map[B](f: A => B): RDD[B] // Spark RDD
+
+flatMap[B](f: A => TraversableOnce[B]): List[B] // Scala List
+flatMap[B](f: A => TraversableOnce[B]): RDD[B] // Spark RDD
+
+filter(pred: A => Boolean): List[A] // Scala List
+filter(pred: A => Boolean): RDD[A] // Spark RDD
+```
+
+---
+### Resilient Distributed Datasets (RDDs)
+
+While their signatures differ a bit, their semantics (macroscopicaly) are the same:
+
+```scala
+reduce(op: (A, A) => A): A // Scala List
+reduce(op: (A, A) => A): A // Spark RDD
+
+fold(z: A)(op: (A, A) => A): A // Scala List
+fold(z: A)(op: (A, A) => A): A // Spark RDD
+
+aggregate[B](z: => B)(seqop: (B, A) => B, combop: (B, B) => B): B // Scala List
+aggregate[B](z: B)(seqop: (B, A) => B, combop: (B, B) => B): B // Spark RDD
+```
+
+(Notice that `z : B` is not call-by-name in Spark's `aggregate`)
+
+---
+
+### Resilient Distributed Datasets (RDDs)
+
+Using RDDs in Spark feels alot like Scala sequential/parallel collections, 
+with the added knowledge that your data is distributed across several machines.
+
+**Example:**  
+Given, `val encyclopedia: RDD[String]`, say we want to search all of `encyclopedia` 
+for mentions of EPFL, and count the number of pages that mention EPFL.
+
+```scala
+val result = encyclopedia.filter(page => page.contains("EPFL")).count()
+```
+
+---
+
+### Example: Word Count
+
+The "Hello, World!" of programming with large-scale data.
+
+```scala
+// Create an RDD
+val rdd = spark.textFile("hdfs://...")
+
+val count = rdd.flatMap(line => line.split(" ") // separate lines into words
+               .map(word => (word, 1))          // include something to count
+			   .reduceByKey(_ + _)              // sum up the 1s in the pairs
+```
+
+That's it!
+
+---
+
+### How to create an RDD?
+
+RDDs can be created in two ways:
+
+1. Transforming an existing RDD
+2. Form a `SparkContext` (or `SparkSession`) object
+
+**Transforming an existing RDD**  
+Just like a call to `map` on a `List` returns a new `List`, many higher-order
+functions defined on an `RDD` return a new `RDD`.
+
+**Form a SparkContext (or SparkSession) object**  
+The `SparkContext` object (renamed `SparkSession`) can be thought of as your 
+handle on the Spark cluster.  It represents the connection between the 
+Spark cluster and your running application.  It defines a handful of 
+methods that can be used to create and populate a new RDD:
+
++ `parallelize` -- convert a local Scala collection to an RDD
++ `textfile` -- read a text file from a **Hadoop distributed file system (HDFS)**
+  or a local file system and return an RDD or `String`
+
+---
+
+## 1.5 Transformations and Actions
