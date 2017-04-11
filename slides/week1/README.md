@@ -487,3 +487,178 @@ methods that can be used to create and populate a new RDD:
 ---
 
 ## 1.5 Transformations and Actions
+
+### Transformations and Actions
+
+Recall **transformers** and **accessors** from Scala sequential and parallel collections.
+
+**Transformers** return new collections as results (not single values)  
+**Examples:** `map`, `filter`, `flatMap`, `groupBy`
+
+```scala
+map(f: A => B): Traversable[B]
+```
+
+**Accessors** return single values as results (not collections)  
+**Examples:** `reduce`, `fold`, `aggregate`
+
+```scala
+reduce(op: (A,A) => A): A
+```
+
+---
+
+### Transformations and Actions
+
+Similarly, Spark defines **transformations** and **actions** on RDDs
+
+These are similar to **transformers** and **accessors** but there are some important differences.
+
+**Transformations** return new RDDs as results  
+**They are lazy---their result RDD is not computed immediately.**
+
+**Actions** compute a result based on an RDD, and either return this result or 
+save it to external storage (eg, an HDFS).  
+**They are eager---their result is computed immediately.**
+
+**Laziness/eagerness** is how we can limit network communication using the programming model!!!
+
+---
+
+### Example
+
+Consider the following simple example:
+
+```scala
+val largeList: List[String] = ...
+val wordsRdd = sc.parallelize(largeList)
+val lengthsRdd = wordsRdd.map(_.length)
+```
+
+What has happened on the cluster at this point?
+
+**Nothing!** Execution of `map` (a transformation) is deffered.
+
+To kick off the computation and wait for its result we add an **action** 
+to the end of the code listing above:
+
+```scala
+val totalChars = lengthsRdd.reduce(_ + _)
+```
+
+---
+
+### Common Transformations in the Wild
+
+These are **LAZY!**
+
+| Name | signature | description |
+| --- | --- | --- |
+| `map` | `map[B](f: A => B): RDD[B]` | apply function to each element in 
+                                        RDD and return the result in an RDD |
+| `flatMap` | `flatMap[B](f: A => TraversableOnce[B]): RDD[B]` | apply function to each
+                                                                 element in RDD and return 
+															     the result in an RDD |
+| `filter` | `filter(pred: A => Boolean): RDD[A]` | apply predicate to each element in RDD
+	                                                and return an RDD of elements that 
+													have passed the predicate condition |
+| `distinct` | `distinct(): RDD[B]` | return RDD with duplicates removed |
+
+---
+
+### Common Actions in the Wild
+
+These are **EAGER!**
+
+| Name | signature | description |
+| --- | --- | --- |
+| `collect` | `collect(): Array[T]` | return all elements of the RDD |
+| `count` | `count(): Long` | return the number of elements of the RDD |
+| `take` | `take(num: Int)` | return the first `num` elements of the RDD |
+| `reduce` | `reduce(op: (A, A) => A): A` | combine the elements in the RDD 
+                                            using `op` and return result |
+| `foreach` | `foreach(f: T => Unit): Unit` | apply `f` to each element in the RDD |
+
+---
+
+### Another Example
+
+Let's assume that we have an `RDD[String]` which contains gigabytes of logs collected over the previous year. Each element of this RDD represents one line of logging.
+
+Assuming that dates come in the form, `YYYY-MM-DD:HH:MM:SS`, and errors are logged with 
+a prefix that includes the word "error" ...
+
+**How would you determine the number of errors that were logged in Dec 2016?**
+
+```scala
+val lastYearsLogs: RDD[String] = ...
+val numDecErrorLogs = lastYearsLogs.filter(lg => lg.contains("2016-12") && lg.contains("error"))
+                                   .count()
+```
+
+---
+
+### Benefits of Laziness for Large-Scale Data
+
+Spark computes RDDs the first time they are used in an action.
+
+This helps when processing large amounts of data.
+
+**Example**
+
+```scala
+val lastYearsLogs: RDD[String] = ...
+val firstLogsWithErrors = lastYearsLogs.filter(_.contains("Error")).take(10)
+```
+
+The execution of `filter` is deferred until the `take` action is applied.
+
+Spark leverages this by analyzing and optimizing the **chain of operations** before executing it.
+
+Spark will not compute intermediate RDDs. Instead, as soon as 10 elements of the 
+filtered RDD have been computed, `firstLogsWithErrors` is done.  At this point Spark stops 
+working, conserving the time and space that would have been required if we 
+computed elements of the unused result of filter.
+
+--- 
+
+### Transformations on Two RDDs (LAZY!)
+
+RDDs also support set-like operations, like `union` and `intersection`
+
+The **Two-RDD transformations** combine two RDDs into one.
+
+| Name | signature | description |
+| --- | --- | --- |
+| `union` | `union(other: RDD[T]): RDD[T]` | return an RDD containing elements from both RDDs |
+| `intersection` | `intersection(other: RDD[T]): RDD[T]` | return an RDD containing the elements that appear in both RDDs |
+| `subtract` | `subtract(other: RDD[T]): RDD[T]` | return an RDD with the contents of the other RDD removed |
+| `cartesian` | `cartesian[U](other: RDD[U]): RDD[(T, U)]` | Cartesian product with the other RDD |
+
+---
+
+### Other useful RDD Actions (EAGER!)
+
+RDDs also contain other important actions unrelated to regular Scala collections but which are useful when dealing with distributed data.
+
+| Name | signature | description |
+| --- | --- | --- |
+| `takeSample` | `takeSample(withRepl: Boolean, num: Int): Array[T]` |  |
+| `takeOrdered` | `takeOrdered(num: Int)(implicit ord: Ordering[T]): Array[T]` | |
+| `saveAsTextFile` | `saveAsTextFile(path: String): Unit` | |
+| `saveAsSequenceFile` | `saveAsSequenceFile(path: String): Unit` | |
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
