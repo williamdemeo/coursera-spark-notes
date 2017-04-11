@@ -554,7 +554,7 @@ These are **LAZY!**
 
 | Name | signature | description |
 | --- | --- | --- |
-| `map` | ```scala map[B](f: A => B): RDD[B]``` | apply function to each element in RDD and return the result in an RDD |
+| `map` | `map[B](f: A => B): RDD[B]` | apply function to each element in RDD and return the result in an RDD |
 | `flatMap` | `flatMap[B](f: A => TraversableOnce[B]): RDD[B]` | apply function to each element in RDD and return the result in an RDD |
 | `filter` | `filter(pred: A => Boolean): RDD[A]` | apply predicate to each element in RDD and return an RDD of elements that have passed the predicate condition |
 | `distinct` | `distinct(): RDD[B]` | return RDD with duplicates removed |
@@ -570,8 +570,7 @@ These are **EAGER!**
 | `collect` | `collect(): Array[T]` | return all elements of the RDD |
 | `count` | `count(): Long` | return the number of elements of the RDD |
 | `take` | `take(num: Int)` | return the first `num` elements of the RDD |
-| `reduce` | `reduce(op: (A, A) => A): A` | combine the elements in the RDD 
-                                            using `op` and return result |
+| `reduce` | `reduce(op: (A, A) => A): A` | combine the elements in the RDD using `op` and return result |
 | `foreach` | `foreach(f: T => Unit): Unit` | apply `f` to each element in the RDD |
 
 ---
