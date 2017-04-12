@@ -281,6 +281,12 @@ NB sending packets between continents is *1 million times* slower than main memo
 
 ---
 
+### Latency and System Design
+
+<img src="img/1-3_1-LatencyAndSystemDesign.png" alt="Choices" style="width: 350px"/>
+
+---
+
 ### Big Data Processing and Latency?
 
 With some intuition now about how expensive network communication and 
@@ -665,7 +671,7 @@ Let's start by recapping some major themes from previous sessions:
 
 ### Iteration and Big Data Processing
 
-(omitting figures comparing Hadoop and Spark iteration)
+<img src="img/1-6_1-1-6_1-IterationAndBigDataProcessing.png" alt="Choices" style="width: 350px"/>
 
 ---
 
@@ -789,6 +795,8 @@ Pass the desired storage level as a parameter to `persist`.
 ---
 
 ### Caching and Persistence
+
+**Storage levels.** Other ways to control how Spark stores objects.
 
 | Level | Space used | CPU time | In memory | On disk|
 | ---   | ---        | ---      | ---       | ---    |
