@@ -646,5 +646,348 @@ RDDs also contain other important actions unrelated to regular Scala collections
 
 ### Why is Spark Good for Data Science?
 
+Let's start by recapping some major themes from previous sessions:
+
++ We learned the difference between transformations and actions.
+  - **Transformations:** deferred/lazy
+  - **Actions:** Eager, kick off staged transformations.
+  
++ We learned that latency makes a big difference; too much latency wastes time 
+  of the data anaylyst.
+  - **In-memory computation:** significantly lowers latencies 
+	(several orders of magnitude!)
+	
+**Why do you think Spark is good for data science?**
+
+**Hint:** Most data science problems involve iteration.
 
 ---
+
+### Iteration and Big Data Processing
+
+(omitting figures comparing Hadoop and Spark iteration)
+
+---
+
+### Iteration, Example: Logistic Regression
+
+Logistic regression is an iterative algorithm typically used for classification.
+Like other classification algorithms, the classifier's weights are iteratively 
+updated based on a training dataset.
+
+$ w \leftarrow w - \alpha \cdot \sum_{i=1}^n g(w; x_i, y_i)$
+
+Logistic regression can be implemented in Spark in a straightforward way:
+
+```scala 
+  val points = sc.textFile(...).map(parsePoint)
+  var w = Vector.zeros(d)
+  for (i <- 1 to numIterations) {
+    val gradient = points.map { p =>
+      (1 / (1 + exp(-p.y * w.dot(p.x)))- 1) * p.y * p.y
+    }.reduce(_ + _)
+    w -= alpha * gradient
+  }
+```
+
+What's going on in this code snippet?
+
+`points` is being reevaluated upon every iteration!  
+That's unnecessary!  What can we do about this?
+
+---
+
+### Caching and Persistence
+
+By default, **RDDs are recomputed each time you run an action on them**.
+This can be expensive (in time) if you need to use a dataset more than once.
+
+**Spark allows you to control what is cached in memory.**
+
+**To Tell Spark to cache an RDD in memory, simply call `persist()` or `cache()` on it.**
+
+---
+
+### Caching and Persistence
+
+By default, **RDDs are recomputed each time you run an action on them**.
+This can be expensive (in time) if you need to use a dataset more than once.
+
+**Spark allows you to control what is cached in memory.**
+
+```scala
+  val lastYearsLogs: RDD[String] = ...
+  val logsWithErrors = lastYearsLogs.filter(_.contains("ERROR")).persist()
+  val firstLogsWithErrors = logsWithErrors.take(10)
+```
+
+Here, we *cache* `logsWithErrors` in memory.
+
+After `firstLogsWithErrors` is computed, Spark will store the contents of `logsWithErrors` 
+for faster access in future operations in case we reuse it.
+
+---
+
+### Caching and Persistence
+
+By default, **RDDs are recomputed each time you run an action on them**.
+This can be expensive (in time) if you need to use a dataset more than once.
+
+**Spark allows you to control what is cached in memory.**
+
+```scala
+  val lastYearsLogs: RDD[String] = ...
+  val logsWithErrors = lastYearsLogs.filter(_.contains("ERROR")).persist()
+  val firstLogsWithErrors = logsWithErrors.take(10)
+  val numErrors = logsWithErrors.count() // faster
+```
+
+**Now, computing the count on** `logsWithErrors` **is much faster.**
+
+---
+
+### Back to Our Logistic Regression Example
+
+Logistic regression is an iterative algorithm typically used for classification.
+Like other classification algorithms, the classifier's weights are iteratively 
+updated based on a training dataset.
+
+```scala
+  val points = sc.textFile(...).map(parsePoint).persist()
+  var w = Vector.zeros(d)
+  for (i <- 1 to numIterations) {
+    val gradient = points.map { p =>
+      (1 / (1 + exp(-p.y * w.dot(p.x)))- 1) * p.y * p.y
+    }.reduce(_ + _)
+    w -= alpha * gradient
+  }
+```
+
+**Now, points is evaluated once and is cached in memory. 
+It is then re-used on each iteration.**
+
+---
+
+### Caching and Persistence
+
+**There are many ways to configure how your data is persisted.**
+
++ in memory as regular Java objects
++ on disk as regular Java objects
++ in memory as serialized Java objects (more compact)
++ on disk as serialized Java objects (more compact)
++ both in memory and on disk (spill over to disk to avoid re-computation)
+
+`cache()`  
+Shorthand for using the default storage level, 
+which is in memory only as regular Java objects.
+
+`persist()`  
+Persistence can be customized with this method.
+Pass the desired storage level as a parameter to `persist`.
+
+---
+
+### Caching and Persistence
+
+| Level | Space used | CPU time | In memory | On disk|
+| ---   | ---        | ---      | ---       | ---    |
+| `MEMORY_ONLY` | High | Low | Y | N |
+| `MEMORY_ONLY_SER` | Low | High | Y | N |
+| `MEMORY_AND_DISK` | High | Medium | Some | Some |
+| `MEMORY_AND_DISK_SER` | Low | High | Some | Some |
+| `DISK_ONLY` | Low | High | N | Y |
+
+---
+
+### RDDs Look Like Collections, But Behave Totally Differently
+
+**Key takeaway:
+
+Despite similar-looking API to Scala Collections   
+**the deferred semantics of Spark's RDDs are very unlike Scala Collections**
+
+Due to:  
++ the lazy semantics of RDD transformation operations (`map`, `flatMap`, `filter`)
++ users' implicit reflex to assume collections are eagerly evaluated...
+
+**...one of the most common performance bottlenecks of newcomers to Spark arises from 
+unknowingly re-evaluating several transformations when caching could be used**
+
+**Don't make this mistake in your programming assignments.**
+
+---
+
+### Restating the Benefits of Laziness for Large-Scale Data
+
+While many users struggle with the lazy semantics of RDDs at first,
+it's helpful to remember the ways in which these semantics are applied in
+to large-scale distributed computing problems.
+
+**Example #1**
+
+```scala
+  val lastYearsLogs: RDD[String] = ...
+  val firstLogsWithErrors = lastYearsLogs.filter(_.contains("ERROR")).take(10)
+```
+
+The execution of `filter` is deferred until the take action is applied.
+
+Spark leverages this by analyzing and optimizing the **chain of operations** before executing it.
+
+Spark will not compute intermediate RDDs. Instead, as soon as 10 elements of the filtered RDD
+have been computed, `firstLogsWithErrors` is done.  At this point Spark stops working,
+saving time and space by not copmuting elements of the unused part of the result of filter.
+
+---
+
+### Restating the Benefits of Laziness for Large-Scale Data
+
+While many users struggle with the lazy semantics of RDDs at first,
+it's helpful to remember the ways in which these semantics are applied in
+to large-scale distributed computing problems.
+
+**Example #2**
+
+```scala
+  val lastYearsLogs: RDD[String] = ...
+  val numErrors = lastYearsLogs.map(_.lowercase)
+                  .filter(_.contains("error"))
+                  .count()
+```
+
+Lazy evaluation of these transofrmations allows Spark to *stage* computations.
+That is, Spark can make important optimizations to the **chain of operations** before execution.
+
+For example, after calling `map` and `filter`, Spark knows that it can avoid doing multiple
+passes through the data.  That is, Spark can traverse the RDD once, performing the
+`map` and `filter` in this single pass, before returning the resulting `count`.
+
+---
+
+## 1.7 Cluster Topology Matters!
+
+### Example 1: A Simple `println`
+
+Let's start with an example. Assume we have an RDD populated with `Person` objects:
+
+```scala
+  case class Person(name: String, age: Int)
+```
+
+What does the following code snippet do?
+
+```scala
+  val people: RDD[Person] = ...
+  people.foreach(println)
+```
+
+**What happens?**
+
+---
+
+### Example 2: A Simple `take`
+
+What about here? Assume we have an RDD populated with same `Person` objects:
+
+```scala
+  case class Person(name: String, age: Int)
+```
+
+What does the following code snippet do?
+
+```scala
+  val people: RDD[Person] = ...
+  val first10 = people.take(10)
+```
+
+**Where will the** `Array[Person]` **representing the** `first10` **end up?**
+
+---
+
+### How Spark Jobs are Executed
+
+<img src="img/1-7_1-HowSparkJobsAreExecuted.png" alt="Choices" style="width: 350px"/>
+
+---
+
+### How Spark Jobs are Executed
+
+<img src="img/1-7_2-HowSparkJobsAreExecuted.png" alt="Choices" style="width: 350px"/>
+
+---
+
+### How Spark Jobs are Executed
+
+<img src="img/1-7_3-HowSparkJobsAreExecuted.png" alt="Choices" style="width: 350px"/>
+
+---
+
+### How Spark Jobs are Executed
+
+<img src="img/1-7_4-HowSparkJobsAreExecuted.png" alt="Choices" style="width: 350px"/>
+
+---
+
+### Back to Example 1: A Simple `println`
+
+Let's start with an example. Assume we have an RDD populated with `Person` objects:
+
+```scala
+  case class Person(name: String, age: Int)
+```
+
+What does the following code snippet do?
+
+```scala
+  val people: RDD[Person] = ...
+  people.foreach(println)
+```
+
+**On the driver:** Nothing. Why?
+
+Recall that `foreach` is an action, with return type `Unit`.
+Therefore, it is eagerly executed on the executors, not the driver, 
+so any calls to `println` are happening on the `stdout` of worker
+nodes and are thus not visible in the `stdout` of the driver node.
+
+---
+
+### Back to Example 2: A Simple `take`
+
+What about here? Assume we have an RDD populated with same `Person` objects:
+
+```scala
+  case class Person(name: String, age: Int)
+```
+
+What does the following code snippet do?
+
+```scala
+  val people: RDD[Person] = ...
+  val first10 = people.take(10)
+```
+
+Where will the `Array[Person]` representing the `first10` end up?
+
+**The driver program.**
+
+*In general, executing an action involves communication between worker nodes
+and the node running the driver program.*
+
+---
+
+### Cluster Topology Matters!
+
+**Moral of the story:**
+
+To make effective use of RDDs, you have to understand a little bit about how Spark works under the hood.
+
+Due to an API which is mixed eager/lazy, it's not always immediately obvious
+on what part of the cluster a line of code might run.  
+
+**It's up to you to know where your code is executing!**
+
+*Evan though RDDs look like regular Scala collections upon first glance,
+unlike collections, RDDs require you to have a good grasp of the underlying
+infrastructure they are running on.
